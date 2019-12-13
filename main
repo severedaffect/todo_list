@@ -1,0 +1,237 @@
+# ------------------------------------------ To Do List ------------------------------------------
+# https://effbot.org/tkinterbook/ # tkinter doc site
+# ------------------------------------------ Libraries -------------------------------------------
+import tkinter as tk
+from tkinter import ttk
+import datetime as dt
+import calendar as cal
+
+# ------------------------------------------ Variables -------------------------------------------
+# ------------ GUI
+WIDTH = 380
+HEIGHT = 640
+
+CAL_WIDTH = WIDTH/2
+CAL_HEIGHT = HEIGHT/4
+
+# ------------ Colors
+dark_yellow = '#997300'
+yellow = "#ffff66"
+yellow_fade = '#ffff99'
+dark_orange = '#803300'
+orange = "#ff6600"
+orange_fade = "#ff9966"
+dark_red = '#660000'
+red = "#ff0000"
+red_fade = "#ff6666"
+color_list = [yellow, orange, red]
+color_fade_list = [yellow_fade, orange_fade, red_fade]
+color_dark_list = [dark_yellow, dark_orange, dark_red]
+priority_list =['minute', 'medium','immediate']
+
+green = "#00ff00"
+mulled_blue = "#4d4dff"
+dark_blue = "#004080"
+
+# ------------ List
+today = dt.date.today()
+
+# ------------------------------------------ Definitions -----------------------------------------
+def take_date(list):
+    return list[1]
+
+def take_priority(list):
+    return list[2]
+
+# ------------------------------------------ Classes --------------------------------------------
+# --- Not in use
+class Calendar:
+    def __init__(self, gui_root):
+        self.today = dt.date.today()
+        self.day = self.today.day
+        self.month = self.today.month
+        self.year = self.today.year
+        self.canvas = tk.Canvas(gui_root, height=CAL_HEIGHT, width=CAL_WIDTH)
+        self.canvas.pack()
+
+# --- In use
+class To_Do_list:
+    def __init__(self):
+        self.active = True
+        self.todo_queue = [['chorse 2', dt.date.today(), 'minute', True],
+                           ['chorse', dt.date.today(), 'immediate', True],
+                           ['dishes', dt.date.today() + dt.timedelta(days=1), 'medium', True],
+                           ['shovel', dt.date.today() - dt.timedelta(days=3), 'minute', True],
+                           ['shovel', dt.date.today() - dt.timedelta(days=3), 'immediate', True]
+                           ]
+
+    def add_new_subject(self, sub_str, due_date, priority):
+        self.todo_queue.append([sub_str, due_date, priority, True])
+
+    def remove_subject(self, subject_index):
+        self.todo_queue.pop(subject_index)
+
+    def toggle_subject_state(self, subject_index):
+        # changes whether the object is active in the list
+        self.todo_queue[subject_index][3] = not self.todo_queue[subject_index][3]
+
+    def sort_queue(self):
+        # if the list has more than one item
+        if len(self.todo_queue) >= 2:
+            # ---sort first by date
+            self.todo_queue.sort(key=take_date)
+
+            # ---sort by priority
+            _sorted_todo_list = []
+            _current_day = []
+            _first_to_sort = self.todo_queue[0]
+            _current_day.append(self.todo_queue[0])
+
+            for _i, _sub in enumerate(self.todo_queue):
+                # skip the first as it's accounted for
+                if _i == 0:
+                    continue
+
+                # If the days are the same, add them to a group
+                if _sub[1] == _first_to_sort[1] and _i:
+                    _current_day.append(_sub)
+                else: # If the days are different, sort them and then start new group
+                    _current_day.sort(key=take_priority)
+                    for _sorted in _current_day:
+                        _sorted_todo_list.append(_sorted)
+                    _current_day = [_sub]
+                    _first_to_sort = _sub
+
+            if len(_current_day) > 0:
+                for _sorted in _current_day:
+                    _sorted_todo_list.append(_sorted)
+                _current_day = []
+            self.todo_queue = _sorted_todo_list
+        else:
+            print('list has one item or less')
+
+    def display_queue(self):
+        for _sub in self.todo_queue:
+            print(_sub)
+
+    def stop_list(self):
+        self.active = not self.active
+
+    def main_loop(self):
+        while self.active:
+            pass
+
+class GUI:
+    def __init__(self):
+        # ------------------ List ----------------------------
+        self.todo_list = To_Do_list()
+
+        # ------------------ Visuals -------------------------
+        self.root = tk.Tk()
+        # create the window
+        self.canvas = tk.Canvas(self.root, bg=mulled_blue, height=HEIGHT, width=WIDTH)
+        self.canvas.pack()
+
+        # create the entry box
+        self.entry_box = tk.Entry(self.canvas, font=('Arial', 20), borderwidth=5)
+        self.entry_box.place(relx=0, rely=0, relwidth=0.8, relheight=0.1)
+
+        # identify the date
+        self.today = dt.date.today()
+        self.day = self.today.day
+        self.month = self.today.month
+        self.year = self.today.year
+
+        # Create the data entries
+        self.day_choice = ttk.Combobox(self.root, font=('Arial', 20))
+        self.day_choice['values'] = [x for x in list(range(cal.monthlen(self.year, self.month)))]
+        self.day_choice.place(relx=0, rely=0.1, relwidth=0.1, relheight=0.1)
+
+        self.month_choice = ttk.Combobox(self.root, font=('Arial', 20))
+        self.month_choice['values'] = [x for x in (cal.month_name)]
+        self.month_choice.place(relx=0.1, rely=0.1, relwidth=0.25, relheight=0.1)
+
+        self.year_choice = ttk.Combobox(self.root, font=('Arial', 20))
+        self.year_choice['values'] = [x for x in range(self.year, self.year+2)]
+        self.year_choice.place(relx=0.35, rely=0.1, relwidth=0.15, relheight=0.1)
+
+
+        # create the selection buttons
+        self.add_button = tk.Button(self.canvas, text='Add to list!', font=('Arial', 10),
+                                    command=lambda:self.add_subject()
+                                    )
+        self.add_button.place(relx=0.8, rely=0, relwidth=0.2, relheight=0.1)
+
+        self.button_col = 0
+        self.color_button = tk.Button(self.canvas, bg=color_list[self.button_col], text='Priority', font=('Arial', 10),
+                                      activebackground=color_dark_list[self.button_col],
+                                      command=lambda:self.change_color('add'))
+        self.color_button.place(relx=0.8, rely=0.1, relwidth=0.2, relheight=0.1)
+
+    def change_color(self, mode):
+        if mode == 'add':
+            self.button_col += 1
+            if self.button_col > (len(color_list)-1):
+                self.button_col = 0
+            self.color_button.configure(bg=color_list[self.button_col], activebackground=color_dark_list[self.button_col])
+        elif mode == 'reset':
+            self.button_col = 0
+            self.color_button.configure(bg=color_list[self.button_col], activebackground=color_dark_list[self.button_col])
+
+    def add_subject(self):
+        self.sub = self.entry_box.get()
+        self.sub_day = self.day_choice.get()
+        self.sub_month = self.month_choice.get()
+        self.sub_year = self.year_choice.get()
+        self.month_dict = {'January' : 1,
+                           'February' : 2,
+                           'March' : 3,
+                           'April' : 4,
+                           'May' : 5,
+                           'June' : 6,
+                           'July' : 7,
+                           'August' : 8,
+                           'September' : 9,
+                           'October' : 10,
+                           'November' : 11,
+                           'December' : 12}
+
+        # if all the entries are filled, then proceed to add to the list
+        if len(self.sub) != 0 and len(self.sub_day) != 0 and len(self.sub_year) != 0 and len(self.sub_month) != 0:
+            self.todo_list.add_new_subject(self.sub, dt.date(int(self.sub_year),
+                                                             int(self.month_dict[self.sub_month]),
+                                                             int(self.sub_day),), priority_list[self.button_col])
+            self.todo_list.sort_queue()
+
+            # Reset the data fields
+            self.change_color('reset')
+            self.init_list_display()
+            self.day_choice.set('')
+            self.year_choice.set('')
+            self.month_choice.set('')
+            self.entry_box.delete(0, tk.END)
+            print('did the thing')
+        else:
+            print('Requirements not met')
+
+    def init_list_display(self):
+        # make sure to add items as one whole string to avoid nasty looking brackets being applied to individual strings
+        self.name_list = tk.Listbox(self.canvas, selectmode='SINGLE')
+        self.date_list = tk.Listbox(self.canvas, selectmode='SINGLE')
+
+        for _l in self.todo_list.todo_queue:
+            self.name_list.insert(tk.END, _l[0])
+            self.date_list.insert(tk.END, _l[1])
+
+        self.name_list.place(relx=0, rely=0.2, relwidth=0.4, relheight=0.9)
+        self.date_list.place(relx=0.4, rely=0.2, relwidth=0.4, relheight=0.9)
+
+    def run_program(self):
+        self.root.mainloop()
+
+
+# ------------------------------------------ Main Code ------------------------------------------
+visuals = GUI()
+visuals.init_list_display()
+
+visuals.run_program()
