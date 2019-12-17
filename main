@@ -14,6 +14,13 @@ HEIGHT = 640
 CAL_WIDTH = WIDTH/2
 CAL_HEIGHT = HEIGHT/4
 
+FONT = 'Arial'
+
+# --- GUI I/O
+b_height = 0.1
+b_width = 0.2
+f_size = 10
+
 # ------------ Colors
 dark_yellow = '#997300'
 yellow = "#ffff66"
@@ -32,6 +39,7 @@ priority_list =['minute', 'medium','immediate']
 green = "#00ff00"
 mulled_blue = "#4d4dff"
 dark_blue = "#004080"
+gray = '#a6a6a6'
 
 # ------------ List
 today = dt.date.today()
@@ -55,10 +63,10 @@ class Calendar:
         self.canvas.pack()
 
 # --- In use
-class To_Do_list:
+class To_do_list:
     def __init__(self):
         self.active = True
-        self.todo_queue = [['chorse 2', dt.date.today(), 'minute', True],
+        self.todo_queue = [['chorse 2', dt.date.today(), 'minute', False],
                            ['chorse', dt.date.today(), 'immediate', True],
                            ['dishes', dt.date.today() + dt.timedelta(days=1), 'medium', True],
                            ['shovel', dt.date.today() - dt.timedelta(days=3), 'minute', True],
@@ -121,19 +129,32 @@ class To_Do_list:
         while self.active:
             pass
 
-class GUI:
+class Gui:
     def __init__(self):
         # ------------------ List ----------------------------
-        self.todo_list = To_Do_list()
+        self.todo_list = To_do_list()
+        self.month_dict = {'January': 1,
+                           'February': 2,
+                           'March': 3,
+                           'April': 4,
+                           'May': 5,
+                           'June': 6,
+                           'July': 7,
+                           'August': 8,
+                           'September': 9,
+                           'October': 10,
+                           'November': 11,
+                           'December': 12}
 
         # ------------------ Visuals -------------------------
         self.root = tk.Tk()
+        self.active = True
         # create the window
         self.canvas = tk.Canvas(self.root, bg=mulled_blue, height=HEIGHT, width=WIDTH)
         self.canvas.pack()
 
         # create the entry box
-        self.entry_box = tk.Entry(self.canvas, font=('Arial', 20), borderwidth=5)
+        self.entry_box = tk.Entry(self.canvas, font=(FONT, 20), borderwidth=5)
         self.entry_box.place(relx=0, rely=0, relwidth=0.8, relheight=0.1)
 
         # identify the date
@@ -143,30 +164,41 @@ class GUI:
         self.year = self.today.year
 
         # Create the data entries
-        self.day_choice = ttk.Combobox(self.root, font=('Arial', 20))
+        self.day_choice = ttk.Combobox(self.root, font=(FONT, f_size))
         self.day_choice['values'] = [x for x in list(range(cal.monthlen(self.year, self.month)))]
         self.day_choice.place(relx=0, rely=0.1, relwidth=0.1, relheight=0.1)
+        self.day_choice.set(self.day)
 
-        self.month_choice = ttk.Combobox(self.root, font=('Arial', 20))
+        self.month_choice = ttk.Combobox(self.root, font=(FONT, f_size))
         self.month_choice['values'] = [x for x in (cal.month_name)]
         self.month_choice.place(relx=0.1, rely=0.1, relwidth=0.25, relheight=0.1)
+        self.month_choice.set(cal.month_name[self.month])
 
-        self.year_choice = ttk.Combobox(self.root, font=('Arial', 20))
+        self.year_choice = ttk.Combobox(self.root, font=(FONT, f_size))
         self.year_choice['values'] = [x for x in range(self.year, self.year+2)]
         self.year_choice.place(relx=0.35, rely=0.1, relwidth=0.15, relheight=0.1)
+        self.year_choice.set(self.year)
 
 
         # create the selection buttons
-        self.add_button = tk.Button(self.canvas, text='Add to list!', font=('Arial', 10),
+        self.add_button = tk.Button(self.canvas, text='Add to list!', font=(FONT, f_size),
                                     command=lambda:self.add_subject()
                                     )
-        self.add_button.place(relx=0.8, rely=0, relwidth=0.2, relheight=0.1)
+        self.add_button.place(relx=0.8, rely=0, relwidth=b_width, relheight=b_height)
 
         self.button_col = 0
-        self.color_button = tk.Button(self.canvas, bg=color_list[self.button_col], text='Priority', font=('Arial', 10),
+        self.color_button = tk.Button(self.canvas, bg=color_list[self.button_col], text='Priority', font=(FONT, f_size),
                                       activebackground=color_dark_list[self.button_col],
                                       command=lambda:self.change_color('add'))
-        self.color_button.place(relx=0.8, rely=0.1, relwidth=0.2, relheight=0.1)
+        self.color_button.place(relx=0.8, rely=0.1, relwidth=b_width, relheight=b_height)
+
+        self.remove_button = tk.Button(self.canvas, text='Remove', font=(FONT, f_size),
+                                       command=lambda: self.remove_subject())
+        self.remove_button.place(relx=0.8, rely=0.2, relwidth=b_width, relheight=b_height)
+
+        self.active_button = tk.Button(self.canvas, text='Toggle Active \n State', font=(FONT, f_size),
+                                       command=lambda: self.toggle_activation())
+        self.active_button.place(relx=0.8, rely=0.3, relwidth=b_width, relheight=b_height)
 
     def change_color(self, mode):
         if mode == 'add':
@@ -183,18 +215,7 @@ class GUI:
         self.sub_day = self.day_choice.get()
         self.sub_month = self.month_choice.get()
         self.sub_year = self.year_choice.get()
-        self.month_dict = {'January' : 1,
-                           'February' : 2,
-                           'March' : 3,
-                           'April' : 4,
-                           'May' : 5,
-                           'June' : 6,
-                           'July' : 7,
-                           'August' : 8,
-                           'September' : 9,
-                           'October' : 10,
-                           'November' : 11,
-                           'December' : 12}
+
 
         # if all the entries are filled, then proceed to add to the list
         if len(self.sub) != 0 and len(self.sub_day) != 0 and len(self.sub_year) != 0 and len(self.sub_month) != 0:
@@ -214,24 +235,60 @@ class GUI:
         else:
             print('Requirements not met')
 
+    def remove_subject(self):
+        selected_subject = self.name_list.curselection()
+        if len(selected_subject) > 0:
+            self.todo_list.remove_subject(selected_subject[0])
+            self.todo_list.sort_queue()
+            self.init_list_display()
+        else:
+            print('Select a subject to remove')
+
+    def toggle_activation(self):
+        selected_subject = self.non_active.curselection()
+        if len(selected_subject) > 0:
+            # print(selected_subject)
+            # print(type(selected_subject))
+            print('subject activated')
+            self.todo_list.toggle_subject_state(selected_subject[0])
+            self.todo_list.sort_queue()
+            self.init_list_display()
+        else:
+            selected_subject = self.name_list.curselection()
+
+            if len(selected_subject) > 0:
+                self.todo_list.toggle_subject_state(selected_subject[0])
+                self.todo_list.sort_queue()
+                self.init_list_display()
+                print('subject deactivated')
+            else:
+                print('no subject selected')
+
+
+
     def init_list_display(self):
         # make sure to add items as one whole string to avoid nasty looking brackets being applied to individual strings
         self.name_list = tk.Listbox(self.canvas, selectmode='SINGLE')
         self.date_list = tk.Listbox(self.canvas, selectmode='SINGLE')
+        self.non_active = tk.Listbox(self.canvas, selectmode='SINGLE', background=gray)
 
         for _l in self.todo_list.todo_queue:
-            self.name_list.insert(tk.END, _l[0])
-            self.date_list.insert(tk.END, _l[1])
+            if _l[3]:
+                self.name_list.insert(tk.END, _l[0])
+                self.date_list.insert(tk.END, _l[1])
+            else:
+                self.non_active.insert(tk.END,_l[0])
 
         self.name_list.place(relx=0, rely=0.2, relwidth=0.4, relheight=0.9)
         self.date_list.place(relx=0.4, rely=0.2, relwidth=0.4, relheight=0.9)
+        self.non_active.place(relx=0.4, rely=0.6, relwidth=0.4, relheight=0.9)
 
     def run_program(self):
         self.root.mainloop()
 
 
 # ------------------------------------------ Main Code ------------------------------------------
-visuals = GUI()
+visuals = Gui()
 visuals.init_list_display()
-
 visuals.run_program()
+
